@@ -29,8 +29,7 @@ char myx_serial_checksum_raw(char id, int len, char* data) {
     return result;
 }
 
-int myx_serial_pack(char id, int len, char* data, int buf_len,
-                         char* buffer) {
+int myx_serial_pack(char id, int len, char* data, int buf_len, char* buffer) {
     if (len > 0xff) {
         myx_serial_lasterror = "Length too long";
         return -1;
@@ -50,7 +49,8 @@ int myx_serial_pack(char id, int len, char* data, int buf_len,
 }
 
 int myx_serial_send(char id, int len, char* data,
-                         void (*send_callback)(char data, void* extra), void* extra) {
+                    void (*send_callback)(char data, void* extra),
+                    void* extra) {
     if (len > 0xff) {
         myx_serial_lasterror = "Length too long";
         return -1;
@@ -65,7 +65,7 @@ int myx_serial_send(char id, int len, char* data,
 }
 
 int myx_serial_receiver_init(myx_serial_receiver* receiver, char id,
-                                  int buffer_len, char* buffer) {
+                             int buffer_len, char* buffer) {
     if (buffer_len < 3) {
         myx_serial_lasterror = "Buffer must be longer than 3";
         return -1;
@@ -147,4 +147,12 @@ int myx_serial_receiver_tick(myx_serial_receiver* receiver) {
         }
     }
     return MYX_SERIAL_RECV_INCOMPLETE;
+}
+
+char* myx_serial_receiver_last_buffer(myx_serial_receiver* receiver) {
+    return receiver->storage + 2;
+}
+
+int myx_serial_receiver_last_length(myx_serial_receiver* receiver) {
+    return receiver->length;
 }

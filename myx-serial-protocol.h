@@ -24,19 +24,14 @@ typedef struct _myx_serial_receiver {
 const char* myx_serial_get_lasterror();
 char myx_serial_checksum(int len, char* data);
 char myx_serial_checksum_raw(char id, int len, char* data);
-int myx_serial_pack(char id, int len, char* data, int buf_len,
-                         char* buffer);
+int myx_serial_pack(char id, int len, char* data, int buf_len, char* buffer);
 int myx_serial_send(char id, int len, char* data,
-                         void (*send_callback)(char data, void* extra), void* extra);
+                    void (*send_callback)(char data, void* extra), void* extra);
 int myx_serial_receiver_init(myx_serial_receiver* receiver, char id,
-                                  int buffer_len, char* buffer);
+                             int buffer_len, char* buffer);
 int myx_serial_receiver_receive(myx_serial_receiver* receiver, char data);
 int myx_serial_receiver_tick(myx_serial_receiver* receiver);
-inline char* myx_serial_receiver_last_buffer(myx_serial_receiver* receiver) {
-    return receiver->storage;
-}
-inline int myx_serial_receiver_last_length(myx_serial_receiver* receiver) {
-    return receiver->length;
-}
+char* myx_serial_receiver_last_buffer(myx_serial_receiver* receiver);
+int myx_serial_receiver_last_length(myx_serial_receiver* receiver);
 
 #endif  // __MYX_SERIAL_PROTOCOL_H__
