@@ -1,13 +1,15 @@
 
 #include "myx-serial-protocol.h"
 
+#include <stddef.h>
+
 static const char* myx_serial_lasterror = NULL;
 
 const char* myx_serial_get_lasterror() { return myx_serial_lasterror; }
 
-char myx_serial_checksum(size_t len, char* data) {
+char myx_serial_checksum(int len, char* data) {
     short result = 0;
-    for (size_t i = 0; i < len; i++) {
+    for (int i = 0; i < len; i++) {
         result += (short)(data[i]);
     }
     result = (result >> 8) + (result & 0xff);
@@ -15,11 +17,11 @@ char myx_serial_checksum(size_t len, char* data) {
     return result;
 }
 
-char myx_serial_checksum_raw(char id, size_t len, char* data) {
+char myx_serial_checksum_raw(char id, int len, char* data) {
     short result = 0;
     result += (short)(id);
     result += (short)(len & 0xff);
-    for (size_t i = 0; i < len; i++) {
+    for (int i = 0; i < len; i++) {
         result += (short)(data[i]);
     }
     result = (result >> 8) + (result & 0xff);
@@ -27,7 +29,7 @@ char myx_serial_checksum_raw(char id, size_t len, char* data) {
     return result;
 }
 
-intptr_t myx_serial_pack(char id, size_t len, char* data, size_t buf_len,
+int myx_serial_pack(char id, int len, char* data, int buf_len,
                          char* buffer) {
     if (len > 0xff) {
         myx_serial_lasterror = "Length too long";
@@ -40,30 +42,30 @@ intptr_t myx_serial_pack(char id, size_t len, char* data, size_t buf_len,
 
     buffer[0] = id;
     buffer[1] = (char)len;
-    for (size_t i = 0; i < len; i++) {
+    for (int i = 0; i < len; i++) {
         buffer[i + 2] = data[i];
     }
     buffer[len + 2] = myx_serial_checksum_raw(id, len, data);
-    return (intptr_t)(len + 3);
+    return (int)(len + 3);
 }
 
-intptr_t myx_serial_send(char id, size_t len, char* data,
-                         void (*send_callback)(char data)) {
+int myx_serial_send(char id, int len, char* data,
+                         void (*send_callback)(char data, void* extra), void* extra) {
     if (len > 0xff) {
         myx_serial_lasterror = "Length too long";
         return -1;
     }
-    send_callback(id);
-    send_callback((char)len);
-    for (size_t i = 0; i < len; i++) {
-        send_callback(data[i]);
+    send_callback(id, extra);
+    send_callback((char)len, extra);
+    for (int i = 0; i < len; i++) {
+        send_callback(data[i], extra);
     }
-    send_callback(myx_serial_checksum_raw(id, len, data));
-    return (intptr_t)(len + 3);
+    send_callback(myx_serial_checksum_raw(id, len, data), extra);
+    return (int)(len + 3);
 }
 
-intptr_t myx_serial_receiver_init(myx_serial_receiver* receiver, char id,
-                                  size_t buffer_len, char* buffer) {
+int myx_serial_receiver_init(myx_serial_receiver* receiver, char id,
+                                  int buffer_len, char* buffer) {
     if (buffer_len < 3) {
         myx_serial_lasterror = "Buffer must be longer than 3";
         return -1;
@@ -75,7 +77,7 @@ intptr_t myx_serial_receiver_init(myx_serial_receiver* receiver, char id,
     return 0;
 }
 
-intptr_t myx_serial_receiver_receive(myx_serial_receiver* receiver, char data) {
+int myx_serial_receiver_receive(myx_serial_receiver* receiver, char data) {
     receiver->has_ticks = 0;
     switch (receiver->received) {
         case 0: {
@@ -94,7 +96,7 @@ intptr_t myx_serial_receiver_receive(myx_serial_receiver* receiver, char data) {
             receiver->storage[receiver->received] = data;
             receiver->received = 2;
             if (receiver->is_correct) {
-                receiver->length = (size_t)data;
+                receiver->length = (int)data;
                 if (receiver->length > receiver->receive_max) {
                     receiver->is_correct = 0;
                     return MYX_SERIAL_RECV_ERROR_LENGTH;
@@ -134,7 +136,7 @@ intptr_t myx_serial_receiver_receive(myx_serial_receiver* receiver, char data) {
     return MYX_SERIAL_RECV_INCOMPLETE;
 }
 
-intptr_t myx_serial_receiver_tick(myx_serial_receiver* receiver) {
+int myx_serial_receiver_tick(myx_serial_receiver* receiver) {
     if (receiver->received != 0) {
         if (!receiver->has_ticks) {
             receiver->has_ticks = 1;
