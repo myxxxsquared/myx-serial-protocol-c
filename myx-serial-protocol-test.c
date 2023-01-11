@@ -43,6 +43,9 @@ void receiver_send_callback(char data, void* extra) {
             }
             break;
         }
+        default: {
+            printf("Error: Error status.\n");
+        }
     }
 }
 
@@ -69,6 +72,9 @@ int main() {
         status.received_last = 0;
         myx_serial_send(ID, current_len, sending_buf, receiver_send_callback,
                         &status);
+        if(!status.received_last) {
+            printf("Error: Not complete!\n");
+        }
     }
 
     return 0;
